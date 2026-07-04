@@ -22,3 +22,5 @@ VignetteBuilder: knitr
 Depends: 
     R (>= 3.5)
 LazyData: true
+URL: https://github.com/24611049-sketch/greenChargeOps
+BugReports: https://github.com/24611049-sketch/greenChargeOps/issues
