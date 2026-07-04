@@ -1,26 +1,30 @@
 Package: greenChargeOps
-Title: What the Package Does (One Line, Title Case)
+Title: Green Charge Operations Package
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person("PT Green Charge", "Indonesia",
+           email = "24611049@students.uii.ac.id",
+           role = c("aut", "cre"))
+Description: Package untuk membantu operator stasiun pengisian kendaraan listrik dalam menerima data transaksi, memantau penggunaan energi, mengelola tarif, dan menghitung indikator kinerja stasiun (KPI).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-Suggests: 
-    testthat (>= 3.0.0)
-Config/testthat/edition: 3
-Imports: 
+Depends: 
+    R (>= 4.4.1)
+Imports:
+    stats
+Suggests:
+    testthat (>= 3.0.0),
     dplyr,
     forecast,
     ggplot2,
-    kableExtra,
     knitr,
-    rmarkdown
+    kableExtra,
+    rmarkdown,
+    scales
+Config/testthat/edition: 3
 VignetteBuilder: knitr
-Depends: 
-    R (>= 3.5)
 LazyData: true
 URL: https://github.com/24611049-sketch/greenChargeOps
 BugReports: https://github.com/24611049-sketch/greenChargeOps/issues

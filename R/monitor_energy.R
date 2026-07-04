@@ -6,7 +6,7 @@
 #'
 #' @return Data frame ringkasan energi.
 #' @export
-
+#' @importFrom stats aggregate
 monitor_energy_usage <- function(df){
 
   hasil <- aggregate(
