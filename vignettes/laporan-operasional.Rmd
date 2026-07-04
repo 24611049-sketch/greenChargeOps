@@ -1,0 +1,744 @@
+---
+title: "Laporan Operasional Bulanan Green Charge Indonesia"
+author: "PT Green Charge Indonesia"
+date: "`r Sys.Date()`"
+
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    theme: flatly
+    highlight: tango
+
+params:
+  bulan: "Juni"
+  tahun: 2026
+  tarif_baru: 3500
+
+vignette: >
+  %\VignetteIndexEntry{Laporan Operasional Bulanan}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE
+)
+
+library(greenChargeOps)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(forecast)
+library(scales)
+```
+
+# PT Green Charge Indonesia
+
+## Laporan Operasional Bulanan
+
+Laporan ini dihasilkan secara otomatis menggunakan package **greenChargeOps**.
+
+### Parameter Laporan
+
+|Parameter|Nilai|
+|:--|:--|
+|Bulan|`r params$bulan`|
+|Tahun|`r params$tahun`|
+|Tarif Baru|Rp `r format(params$tarif_baru, big.mark=",")` / kWh|
+
+```{r import-data}
+
+data(data_transaksi)
+
+transaksi <- receive_charging_data(data_transaksi)
+
+transaksi <- transaksi %>%
+  filter(
+    bulan_transaksi == params$bulan,
+    tahun_transaksi == params$tahun
+  )
+
+if (nrow(transaksi) == 0) {
+  stop("Tidak ada data untuk parameter bulan dan tahun yang dipilih.")
+}
+
+tarif <- manage_tariff(
+  transaksi,
+  params$tarif_baru
+)
+
+monitor <- monitor_energy_usage(tarif)
+
+kpi <- get_station_kpi(tarif)
+
+```
+
+# Executive Summary
+
+```{r executive-summary}
+
+jumlah_transaksi <- nrow(tarif)
+
+total_energi <- sum(tarif$energi_kwh)
+
+total_pendapatan <- sum(tarif$pendapatan)
+
+rata_durasi <- mean(tarif$durasi_menit)
+
+summary_tbl <-
+
+data.frame(
+
+  Indikator=c(
+
+    "Jumlah Transaksi",
+
+    "Energi (kWh)",
+
+    "Pendapatan (Rp)",
+
+    "Durasi Rata-rata (menit)"
+
+  ),
+
+  Nilai=c(
+
+    format(jumlah_transaksi,big.mark=","),
+
+    round(total_energi,1),
+
+    dollar(
+      total_pendapatan,
+      prefix="Rp "
+    ),
+
+    round(rata_durasi,1)
+
+  )
+
+)
+
+kable(
+
+summary_tbl,
+
+caption="Executive Summary"
+
+) %>%
+
+kable_styling(
+
+bootstrap_options=c(
+
+"striped",
+
+"hover",
+
+"condensed"
+
+),
+
+full_width=FALSE
+
+)
+
+```
+# Dashboard KPI
+
+```{r kpi-table}
+
+kpi %>%
+  mutate(
+
+    total_energi_kwh =
+      round(total_energi_kwh,1),
+
+    total_pendapatan =
+      comma(total_pendapatan),
+
+    utilisasi_persen =
+      paste0(utilisasi_persen,"%")
+
+  ) %>%
+
+  kable(
+
+    caption="Key Performance Indicator (KPI) Tiap Stasiun",
+
+    col.names=c(
+
+      "Stasiun",
+
+      "Energi (kWh)",
+
+      "Pendapatan (Rp)",
+
+      "Jumlah Transaksi",
+
+      "Total Durasi",
+
+      "Utilisasi",
+
+      "Kategori"
+
+    )
+
+  ) %>%
+
+  kable_styling(
+
+    bootstrap_options=c(
+
+      "striped",
+
+      "hover",
+
+      "condensed",
+
+      "responsive"
+
+    ),
+
+    full_width=FALSE
+
+  )
+
+```
+
+# Grafik 1 - Total Energi per Stasiun
+
+```{r energi-stasiun, fig.width=8, fig.height=5}
+
+ggplot(
+
+  monitor,
+
+  aes(
+
+    x=nama_stasiun,
+
+    y=total_energi_kwh,
+
+    fill=nama_stasiun
+
+  )
+
+)+
+
+geom_col(width=.6)+
+
+geom_text(
+
+aes(
+
+label=round(total_energi_kwh,1)
+
+),
+
+vjust=-0.5,
+
+size=4
+
+)+
+
+labs(
+
+title="Total Energi yang Digunakan",
+
+x="Stasiun",
+
+y="Energi (kWh)"
+
+)+
+
+theme_minimal()+
+
+theme(
+
+legend.position="none"
+
+)
+
+```
+
+# Grafik 2 - Pendapatan per Stasiun
+
+```{r pendapatan-stasiun, fig.width=8, fig.height=5}
+
+ggplot(
+
+  monitor,
+
+  aes(
+
+    x=nama_stasiun,
+
+    y=total_pendapatan,
+
+    fill=nama_stasiun
+
+  )
+
+)+
+
+geom_col(width=.6)+
+
+geom_text(
+
+aes(
+
+label=scales::comma(total_pendapatan)
+
+),
+
+vjust=-0.5,
+
+size=3
+
+)+
+
+labs(
+
+title="Pendapatan Tiap Stasiun",
+
+x="Stasiun",
+
+y="Pendapatan (Rp)"
+
+)+
+
+theme_minimal()+
+
+theme(
+
+legend.position="none"
+
+)
+
+```
+
+# Grafik 3 - Jumlah Transaksi
+
+```{r transaksi-stasiun, fig.width=8, fig.height=5}
+
+ggplot(
+
+  monitor,
+
+  aes(
+
+    x=nama_stasiun,
+
+    y=jumlah_transaksi,
+
+    fill=nama_stasiun
+
+  )
+
+)+
+
+geom_col(width=.6)+
+
+geom_text(
+
+aes(
+
+label=jumlah_transaksi
+
+),
+
+vjust=-0.5,
+
+size=4
+
+)+
+
+labs(
+
+title="Jumlah Transaksi per Stasiun",
+
+x="Stasiun",
+
+y="Jumlah Transaksi"
+
+)+
+
+theme_minimal()+
+
+theme(
+
+legend.position="none"
+
+)
+
+```
+# Analisis Harian
+
+```{r energi-harian}
+
+energi_harian <-
+
+  tarif %>%
+
+  group_by(tanggal) %>%
+
+  summarise(
+
+    total_energi = sum(energi_kwh),
+
+    total_pendapatan = sum(pendapatan),
+
+    total_transaksi = n(),
+
+    .groups="drop"
+
+  )
+
+kable(
+
+energi_harian,
+
+caption="Ringkasan Harian"
+
+) %>%
+
+kable_styling(
+
+bootstrap_options=c(
+
+"striped",
+
+"hover",
+
+"condensed"
+
+),
+
+full_width=FALSE
+
+)
+
+```
+
+# Grafik Tren Energi Harian
+
+```{r plot-energi-harian, fig.width=9, fig.height=5}
+
+ggplot(
+
+energi_harian,
+
+aes(
+
+tanggal,
+
+total_energi
+
+)
+
+)+
+
+geom_line(
+
+linewidth=1.2,
+
+colour="#1565C0"
+
+)+
+
+geom_point(
+
+size=2.8,
+
+colour="#42A5F5"
+
+)+
+
+labs(
+
+title="Tren Energi Harian",
+
+x="Tanggal",
+
+y="Energi (kWh)"
+
+)+
+
+theme_minimal()
+
+```
+
+# Grafik Pendapatan Harian
+
+```{r plot-pendapatan-harian, fig.width=9, fig.height=5}
+
+ggplot(
+
+energi_harian,
+
+aes(
+
+tanggal,
+
+total_pendapatan
+
+)
+
+)+
+
+geom_line(
+
+linewidth=1.2,
+
+colour="#2E7D32"
+
+)+
+
+geom_point(
+
+size=2.8,
+
+colour="#66BB6A"
+
+)+
+
+labs(
+
+title="Pendapatan Harian",
+
+x="Tanggal",
+
+y="Pendapatan (Rp)"
+
+)+
+
+theme_minimal()
+
+```
+
+# Distribusi Metode Pembayaran
+
+```{r metode}
+
+metode <-
+
+tarif %>%
+
+count(metode_pembayaran)
+
+ggplot(
+
+metode,
+
+aes(
+
+x="",
+
+y=n,
+
+fill=metode_pembayaran
+
+)
+
+)+
+
+geom_col(
+
+width=1
+
+)+
+
+coord_polar(
+
+theta="y"
+
+)+
+
+theme_void()+
+
+labs(
+
+title="Distribusi Metode Pembayaran"
+
+)
+
+```
+
+# Distribusi Jenis Kendaraan
+
+```{r kendaraan}
+
+kendaraan <-
+
+tarif %>%
+
+count(jenis_kendaraan)
+
+ggplot(
+
+kendaraan,
+
+aes(
+
+x="",
+
+y=n,
+
+fill=jenis_kendaraan
+
+)
+
+)+
+
+geom_col(
+
+width=1
+
+)+
+
+coord_polar(
+
+theta="y"
+
+)+
+
+theme_void()+
+
+labs(
+
+title="Distribusi Jenis Kendaraan"
+
+)
+
+```
+# Forecast Kebutuhan Energi
+
+```{r forecast}
+
+bulanan <-
+
+energi_harian$total_energi
+
+ts_energi <-
+
+ts(
+
+bulanan,
+
+frequency=7
+
+)
+
+model <- ets(ts_energi)
+
+prediksi <-
+
+forecast(
+
+model,
+
+h=7
+
+)
+
+plot(
+
+prediksi,
+
+main="Forecast Energi 7 Hari Berikutnya"
+
+)
+
+```
+# Simulasi Perubahan Tarif
+
+```{r simulasi}
+
+tarif_lama <-
+
+sum(
+
+transaksi$pendapatan
+
+)
+
+tarif_baru <-
+
+sum(
+
+tarif$pendapatan
+
+)
+
+simulasi <-
+
+data.frame(
+
+Keterangan=c(
+
+"Pendapatan Lama",
+
+"Pendapatan Baru",
+
+"Selisih"
+
+),
+
+Nilai=c(
+
+tarif_lama,
+
+tarif_baru,
+
+tarif_baru-tarif_lama
+
+)
+
+)
+
+kable(
+
+simulasi,
+
+caption="Simulasi Perubahan Tarif"
+
+) %>%
+
+kable_styling(
+
+bootstrap_options=c(
+
+"striped",
+
+"hover"
+
+),
+
+full_width=FALSE
+
+)
+
+```
+# Kesimpulan
+
+Berdasarkan hasil analisis menggunakan package **greenChargeOps**, diperoleh beberapa temuan utama sebagai berikut.
+
+1. Seluruh transaksi berhasil divalidasi menggunakan fungsi `receive_charging_data()`.
+
+2. Monitoring energi menunjukkan distribusi penggunaan yang relatif seimbang pada ketiga stasiun.
+
+3. Simulasi tarif baru menghasilkan peningkatan total pendapatan.
+
+4. Nilai KPI menunjukkan seluruh stasiun berada pada kategori **`r paste(unique(kpi$kategori), collapse=", ")`**.
+
+5. Model ETS memberikan gambaran kebutuhan energi untuk periode berikutnya sehingga dapat digunakan sebagai dasar perencanaan operasional.
+
+---
+
+**Laporan ini dibuat secara otomatis menggunakan package `greenChargeOps`.**

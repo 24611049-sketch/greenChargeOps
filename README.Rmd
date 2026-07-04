@@ -1,0 +1,137 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit README.Rmd and render it using devtools::build_readme(). -->
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# greenChargeOps
+
+`greenChargeOps` merupakan package R yang dikembangkan untuk membantu operator stasiun pengisian kendaraan listrik (Electric Vehicle Charging Station) dalam mengelola data operasional secara otomatis.
+
+Package ini dibuat sebagai implementasi studi kasus **Sistem Pengisian Energi Kendaraan Listrik PT Green Charge Indonesia**.
+
+## Fitur
+
+Package menyediakan beberapa fungsi utama:
+
+- Menerima dan memvalidasi data transaksi pengisian kendaraan listrik.
+- Melakukan monitoring penggunaan energi setiap stasiun.
+- Mengelola perubahan tarif pengisian.
+- Menghasilkan Key Performance Indicator (KPI) setiap stasiun.
+- Mendukung pembuatan laporan operasional menggunakan R Markdown.
+
+## Struktur Package
+
+```
+greenChargeOps
+├── R/
+│   ├── receive_data.R
+│   ├── monitor_energy.R
+│   ├── manage_tariff.R
+│   └── station_kpi.R
+│
+├── data/
+│   └── data_transaksi.rda
+│
+├── vignettes/
+│   └── laporan-operasional.Rmd
+│
+├── tests/
+└── man/
+```
+
+## Installation
+
+Install package menggunakan **devtools**.
+
+```r
+# install.packages("devtools")
+
+devtools::install_github("username/greenChargeOps")
+```
+
+Apabila package masih berada pada komputer lokal:
+
+```r
+devtools::load_all()
+```
+
+## Dataset
+
+Package menyediakan dataset simulasi:
+
+```{r}
+library(greenChargeOps)
+
+data(data_transaksi)
+
+head(data_transaksi)
+```
+
+## Contoh Penggunaan
+
+### Validasi Data
+
+```{r}
+transaksi <- receive_charging_data(data_transaksi)
+
+head(transaksi)
+```
+
+### Monitoring Energi
+
+```{r}
+monitor_energy_usage(transaksi)
+```
+
+### Mengubah Tarif
+
+```{r}
+tarif <- manage_tariff(
+  transaksi,
+  tarif_baru = 3500
+)
+
+head(tarif)
+```
+
+### Menghasilkan KPI
+
+```{r}
+get_station_kpi(tarif)
+```
+
+## Output Package
+
+Package dapat digunakan untuk menghasilkan:
+
+- Ringkasan transaksi pengisian kendaraan listrik.
+- Monitoring penggunaan energi.
+- Monitoring pendapatan.
+- KPI setiap stasiun pengisian.
+- Laporan operasional bulanan berbasis R Markdown.
+- Visualisasi operasional.
+- Forecast kebutuhan energi.
+
+## Repository
+
+Repository package dapat disimpan pada GitHub untuk memudahkan dokumentasi, pengembangan, dan kolaborasi.
+
+## Author
+
+**PT Green Charge Indonesia**
+
+Universitas Islam Indonesia
+
+Praktikum Komputasi Statistik
+
+2026
